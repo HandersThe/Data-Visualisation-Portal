@@ -1,0 +1,16 @@
+[workspace]
+name = "data_visualisation_portal"
+version = "0.1.0"
+description = "Secure Data Visualization Portal"
+authors = ["Antigravity <antigravity@google.com>"]
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tasks]
+dev = "npm run dev"
+build = "npm run build"
+preview = "npm run preview"
+
+[dependencies]
+nodejs = "20.*"
+git = "*"

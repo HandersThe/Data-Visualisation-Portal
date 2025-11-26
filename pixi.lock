@@ -1,0 +1,23 @@
+version: 6
+environments:
+  default:
+    channels:
+    - url: https://conda.anaconda.org/conda-forge/
+    packages:
+      win-64:
+      - conda: https://conda.anaconda.org/conda-forge/win-64/git-2.52.0-h57928b3_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/win-64/nodejs-20.19.5-h80290e7_0.conda
+packages:
+- conda: https://conda.anaconda.org/conda-forge/win-64/git-2.52.0-h57928b3_1.conda
+  sha256: 5ae27ac105cb64b317e445e06f8270122c097866c94d268bacad0a2d00bebe29
+  md5: 4eac2e1eea2c756cc76e0e0f329b71d8
+  license: GPL-2.0-or-later and LGPL-2.1-or-later
+  size: 122142927
+  timestamp: 1763715783880
+- conda: https://conda.anaconda.org/conda-forge/win-64/nodejs-20.19.5-h80290e7_0.conda
+  sha256: cd47d7ca20ef0737534453cbaa061a65f70a8cfea22de69cbe15d68df6f874a7
+  md5: 1b147d85a870f8918a4494c6405661d9
+  license: MIT
+  license_family: MIT
+  size: 22949854
+  timestamp: 1758224952437
