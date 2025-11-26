@@ -11,6 +11,7 @@ export default function AdminDashboard() {
     const { logout } = useAuth();
     const [parsedData, setParsedData] = useState(null);
     const [fileName, setFileName] = useState("");
+    const [datasetName, setDatasetName] = useState("");
     const [previewColumns, setPreviewColumns] = useState([]);
     const [publishing, setPublishing] = useState(false);
     const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
@@ -19,6 +20,8 @@ export default function AdminDashboard() {
     const handleDataParsed = (data, name) => {
         setParsedData(data);
         setFileName(name);
+        // Set default dataset name from filename (without extension)
+        setDatasetName(name.replace(/\.[^/.]+$/, ""));
         // Capture column order from first row
         if (data && data.length > 0) {
             setPreviewColumns(Object.keys(data[0]));
@@ -39,7 +42,7 @@ export default function AdminDashboard() {
 
             // Create dataset metadata
             const datasetRef = await addDoc(collection(db, "datasets"), {
-                name: fileName,
+                name: datasetName || fileName, // Use custom name or fallback to filename
                 columns: columns,
                 uploadedAt: new Date().toISOString(),
                 recordCount: parsedData.length
@@ -76,6 +79,7 @@ export default function AdminDashboard() {
             setTimeout(() => {
                 setParsedData(null);
                 setFileName("");
+                setDatasetName("");
                 setUploadProgress({ current: 0, total: 0 });
             }, 3000);
         } catch (err) {
@@ -130,6 +134,20 @@ export default function AdminDashboard() {
                                         {publishing ? "Publishing..." : "Publish Data"}
                                     </Button>
                                 </div>
+                            </div>
+
+                            {/* Dataset Name Input */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Dataset Name
+                                </label>
+                                <input
+                                    type="text"
+                                    className="block w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    value={datasetName}
+                                    onChange={(e) => setDatasetName(e.target.value)}
+                                    placeholder="Enter a name for this dataset"
+                                />
                             </div>
 
                             {/* Upload Progress */}

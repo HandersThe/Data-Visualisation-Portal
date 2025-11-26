@@ -3,7 +3,9 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    setPersistence,
+    browserLocalPersistence
 } from "firebase/auth";
 import { doc, getDoc, setDoc, collection, getDocs, limit, query } from "firebase/firestore";
 import { auth, db } from "../firebaseConfig";
@@ -41,7 +43,8 @@ export function AuthProvider({ children }) {
         return user;
     }
 
-    function login(email, password) {
+    async function login(email, password) {
+        await setPersistence(auth, browserLocalPersistence);
         return signInWithEmailAndPassword(auth, email, password);
     }
 
