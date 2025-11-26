@@ -1,11 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "../components/ui/Button";
 import { FileUpload } from "../components/FileUpload";
 import { DataTable } from "../components/DataTable";
 import { db } from "../firebaseConfig";
-import { collection, addDoc, writeBatch, doc } from "firebase/firestore";
+import { collection, addDoc, writeBatch, doc, deleteDoc, query, where, orderBy, getDocs } from "firebase/firestore";
 import { cn } from "../lib/utils";
+import { Trash2 } from "lucide-react";
 
 export default function AdminDashboard() {
     const { logout } = useAuth();
@@ -28,6 +29,24 @@ export default function AdminDashboard() {
         }
         setMessage({ type: "", text: "" });
     };
+
+    const [deletingId, setDeletingId] = useState(null);
+    const [datasets, setDatasets] = useState([]);
+
+    // Fetch datasets on load
+    useEffect(() => {
+        fetchDatasets();
+    }, []);
+
+    async function fetchDatasets() {
+        try {
+            const q = query(collection(db, "datasets"), orderBy("uploadedAt", "desc"));
+            const snapshot = await getDocs(q);
+            setDatasets(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        } catch (err) {
+            console.error("Error fetching datasets:", err);
+        }
+    }
 
     const handlePublish = async () => {
         if (!parsedData) return;
@@ -75,6 +94,10 @@ export default function AdminDashboard() {
             }
 
             setMessage({ type: "success", text: `Successfully published ${totalAdded} records!` });
+
+            // Refresh dataset list
+            fetchDatasets();
+
             // Delay clearing to show success message
             setTimeout(() => {
                 setParsedData(null);
@@ -87,6 +110,40 @@ export default function AdminDashboard() {
             setMessage({ type: "error", text: "Failed to publish data: " + err.message });
         } finally {
             setPublishing(false);
+        }
+    };
+
+    const handleDelete = async (datasetId) => {
+        if (!window.confirm("Are you sure you want to delete this dataset? This cannot be undone.")) return;
+
+        setDeletingId(datasetId);
+        try {
+            // 1. Delete all data rows
+            const dataQuery = query(collection(db, "public_data"), where("datasetId", "==", datasetId));
+            const snapshot = await getDocs(dataQuery);
+
+            const batchSize = 500;
+            const chunks = [];
+            for (let i = 0; i < snapshot.docs.length; i += batchSize) {
+                chunks.push(snapshot.docs.slice(i, i + batchSize));
+            }
+
+            for (const chunk of chunks) {
+                const batch = writeBatch(db);
+                chunk.forEach(doc => batch.delete(doc.ref));
+                await batch.commit();
+            }
+
+            // 2. Delete metadata
+            await deleteDoc(doc(db, "datasets", datasetId));
+
+            setMessage({ type: "success", text: "Dataset deleted successfully" });
+            fetchDatasets();
+        } catch (err) {
+            console.error(err);
+            setMessage({ type: "error", text: "Failed to delete dataset: " + err.message });
+        } finally {
+            setDeletingId(null);
         }
     };
 
@@ -114,6 +171,37 @@ export default function AdminDashboard() {
                             {message.text}
                         </div>
                     )}
+
+                    {/* Dataset Management Section */}
+                    <div className="bg-white p-6 rounded-lg shadow">
+                        <h2 className="text-lg font-medium text-gray-900 mb-4">Manage Datasets</h2>
+                        {datasets.length === 0 ? (
+                            <p className="text-gray-500 text-sm">No datasets uploaded yet.</p>
+                        ) : (
+                            <div className="space-y-4">
+                                {datasets.map((ds) => (
+                                    <div key={ds.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
+                                        <div>
+                                            <h3 className="font-medium text-gray-900">{ds.name}</h3>
+                                            <p className="text-sm text-gray-500">
+                                                {ds.recordCount} records • Uploaded {new Date(ds.uploadedAt).toLocaleDateString()}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                                            onClick={() => handleDelete(ds.id)}
+                                            isLoading={deletingId === ds.id}
+                                        >
+                                            <Trash2 className="h-4 w-4 mr-2" />
+                                            Delete
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
                     {/* Upload Section */}
                     <div className="bg-white p-6 rounded-lg shadow">
