@@ -6,7 +6,8 @@ import { DataTable } from "../components/DataTable";
 import { db } from "../firebaseConfig";
 import { collection, addDoc, writeBatch, doc, deleteDoc, query, where, orderBy, getDocs } from "firebase/firestore";
 import { cn } from "../lib/utils";
-import { Trash2 } from "lucide-react";
+import { Trash2, Search } from "lucide-react";
+import { Input } from "../components/ui/Input";
 
 export default function AdminDashboard() {
     const { logout } = useAuth();
@@ -32,6 +33,11 @@ export default function AdminDashboard() {
 
     const [deletingId, setDeletingId] = useState(null);
     const [datasets, setDatasets] = useState([]);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const filteredDatasets = datasets.filter(ds =>
+        ds.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
     // Fetch datasets on load
     useEffect(() => {
@@ -175,11 +181,25 @@ export default function AdminDashboard() {
                     {/* Dataset Management Section */}
                     <div className="bg-white p-6 rounded-lg shadow">
                         <h2 className="text-lg font-medium text-gray-900 mb-4">Manage Datasets</h2>
-                        {datasets.length === 0 ? (
-                            <p className="text-gray-500 text-sm">No datasets uploaded yet.</p>
+
+                        {/* Search Bar */}
+                        <div className="mb-4 relative">
+                            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                            <Input
+                                placeholder="Search datasets..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="pl-9"
+                            />
+                        </div>
+
+                        {filteredDatasets.length === 0 ? (
+                            <p className="text-gray-500 text-sm text-center py-4">
+                                {searchTerm ? "No matching datasets found." : "No datasets uploaded yet."}
+                            </p>
                         ) : (
                             <div className="space-y-4">
-                                {datasets.map((ds) => (
+                                {filteredDatasets.map((ds) => (
                                     <div key={ds.id} className="flex items-center justify-between p-4 border rounded-lg bg-gray-50">
                                         <div>
                                             <h3 className="font-medium text-gray-900">{ds.name}</h3>
